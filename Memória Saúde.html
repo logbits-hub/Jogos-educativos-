@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Memória Saúde</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a3a2b, #2a5a3e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 30px;
+            padding: 25px 20px 30px;
+            max-width: 650px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #1a3a2b;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #3a6b4e;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background: #e9f3ee;
+            padding: 12px 18px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .stats span {
+            background: #1a3a2b;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 15px 0 20px;
+        }
+
+        .card {
+            background: #2a5a3e;
+            border-radius: 16px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            cursor: pointer;
+            transition: 0.25s ease;
+            box-shadow: 0 6px 0 #0f2a1b;
+            user-select: none;
+            border: 2px solid #4a8a6a;
+        }
+
+        .card.flipped,
+        .card.matched {
+            background: #f5fff9;
+            border-color: #1a6b3a;
+            box-shadow: 0 6px 0 #0f2a1b, 0 0 0 2px #b3e0c0;
+            transform: scale(0.98);
+        }
+
+        .card.matched {
+            background: #c8f0d6;
+            border-color: #1a8a3a;
+            cursor: default;
+            opacity: 0.8;
+            transform: scale(0.95);
+        }
+
+        .card:not(.flipped):not(.matched):hover {
+            transform: scale(1.04);
+            background: #3a7a5a;
+        }
+
+        .card .card-content {
+            display: none;
+        }
+
+        .card.flipped .card-content,
+        .card.matched .card-content {
+            display: block;
+        }
+
+        /* Mensagem de vitória */
+        #winMessage {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 18px;
+            border-radius: 20px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin: 15px 0 10px;
+            border: 2px solid #28a745;
+        }
+
+        #winMessage .highlight {
+            background: #28a745;
+            color: white;
+            padding: 2px 14px;
+            border-radius: 30px;
+        }
+
+        .btn-reset {
+            background: #ffc107;
+            border: none;
+            padding: 14px 35px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 6px 0 #b38f00;
+            color: #1a3a2b;
+            margin-top: 5px;
+        }
+
+        .btn-reset:hover {
+            background: #ffd93d;
+            transform: scale(1.02);
+            box-shadow: 0 8px 0 #b38f00;
+        }
+
+        .btn-reset:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #b38f00;
+        }
+
+        /* Responsivo */
+        @media (max-width: 500px) {
+            .game-container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.6rem;
+            }
+            .grid {
+                gap: 8px;
+            }
+            .card {
+                font-size: 2rem;
+                border-radius: 12px;
+            }
+            .stats {
+                font-size: 0.9rem;
+                padding: 8px 12px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .card {
+                font-size: 1.6rem;
+            }
+            .grid {
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>🧠 Memória Saúde</h1>
+        <div class="subtitle">Encontre os pares de hábitos saudáveis!</div>
+
+        <div class="stats">
+            <div>✅ Pares: <span id="pairsFound">0</span> / 8</div>
+            <div>🔄 Tentativas: <span id="attempts">0</span></div>
+            <div>⏱️ Tempo: <span id="timerDisplay">0</span>s</div>
+        </div>
+
+        <div class="grid" id="cardGrid"></div>
+
+        <div id="winMessage">
+            🎉 Parabéns! Você encontrou todos os pares em <span class="highlight" id="finalTime">0</span>s e <span class="highlight" id="finalAttempts">0</span> tentativas!
+        </div>
+
+        <button class="btn-reset" id="resetBtn">🔄 Jogar Novamente</button>
+    </div>
+
+    <script>
+        (function() {
+            // ----- CONFIGURAÇÃO DOS PARES (8 pares) -----
+            const PAIRS = [
+                { id: 0, emoji: '🍎', name: 'Maçã' },
+                { id: 1, emoji: '🏃', name: 'Corrida' },
+                { id: 2, emoji: '😴', name: 'Dormir' },
+                { id: 3, emoji: '💧', name: 'Água' },
+                { id: 4, emoji: '🥦', name: 'Vegetais' },
+                { id: 5, emoji: '🧘', name: 'Yoga' },
+                { id: 6, emoji: '🩺', name: 'Médico' },
+                { id: 7, emoji: '😁', name: 'Sorriso' }
+            ];
+
+            // ----- DOM ELEMENTOS -----
+            const grid = document.getElementById('cardGrid');
+            const pairsSpan = document.getElementById('pairsFound');
+            const attemptsSpan = document.getElementById('attempts');
+            const timerSpan = document.getElementById('timerDisplay');
+            const winDiv = document.getElementById('winMessage');
+            const finalTimeSpan = document.getElementById('finalTime');
+            const finalAttemptsSpan = document.getElementById('finalAttempts');
+            const resetBtn = document.getElementById('resetBtn');
+
+            // ----- ESTADO DO JOGO -----
+            let cards = [];
+            let flippedCards = [];
+            let matchedPairs = 0;
+            let attempts = 0;
+            let isLocked = false;   // impede cliques durante animação
+            let timerInterval = null;
+            let seconds = 0;
+            let gameFinished = false;
+
+            // ----- FUNÇÕES AUXILIARES -----
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            // Cria o array de cartas (cada par aparece duas vezes)
+            function buildCardDeck() {
+                const deck = [];
+                PAIRS.forEach(pair => {
+                    deck.push({ ...pair, pairId: pair.id, matched: false, flipped: false });
+                    deck.push({ ...pair, pairId: pair.id, matched: false, flipped: false });
+                });
+                return shuffle(deck);
+            }
+
+            // Renderiza as cartas no grid
+            function renderCards() {
+                grid.innerHTML = '';
+                cards.forEach((card, index) => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'card';
+                    if (card.flipped || card.matched) {
+                        cardDiv.classList.add('flipped');
+                    }
+                    if (card.matched) {
+                        cardDiv.classList.add('matched');
+                    }
+                    cardDiv.dataset.index = index;
+
+                    const content = document.createElement('span');
+                    content.className = 'card-content';
+                    content.textContent = card.emoji;
+                    cardDiv.appendChild(content);
+
+                    cardDiv.addEventListener('click', () => handleCardClick(index));
+                    grid.appendChild(cardDiv);
+                });
+            }
+
+            // Atualiza a interface (placar, etc)
+            function updateUI() {
+                pairsSpan.textContent = matchedPairs;
+                attemptsSpan.textContent = attempts;
+                timerSpan.textContent = seconds;
+            }
+
+            // Verifica se o jogador venceu
+            function checkWin() {
+                if (matchedPairs === PAIRS.length) {
+                    gameFinished = true;
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                    }
+                    finalTimeSpan.textContent = seconds;
+                    finalAttemptsSpan.textContent = attempts;
+                    winDiv.style.display = 'block';
+                    return true;
+                }
+                return false;
+            }
+
+            // Lida com o clique em uma carta
+            function handleCardClick(index) {
+                // Se o jogo acabou, ou está bloqueado, ou a carta já está virada/combinada, ignora
+                if (gameFinished || isLocked) return;
+                const card = cards[index];
+                if (card.flipped || card.matched) return;
+
+                // Vira a carta
+                card.flipped = true;
+                flippedCards.push(index);
+                renderCards();
+
+                // Se duas cartas estão viradas, verifica o par
+                if (flippedCards.length === 2) {
+                    isLocked = true;
+                    attempts++;
+                    updateUI();
+
+                    const idx1 = flippedCards[0];
+                    const idx2 = flippedCards[1];
+                    const card1 = cards[idx1];
+                    const card2 = cards[idx2];
+
+                    if (card1.pairId === card2.pairId) {
+                        // Par encontrado!
+                        card1.matched = true;
+                        card2.matched = true;
+                        matchedPairs++;
+                        // Deixa as cartas viradas permanentemente (classe matched)
+                        renderCards();
+                        updateUI();
+                        flippedCards = [];
+                        isLocked = false;
+
+                        if (checkWin()) {
+                            updateUI();
+                        }
+                    } else {
+                        // Não é par: desvira após 0.8s
+                        setTimeout(() => {
+                            card1.flipped = false;
+                            card2.flipped = false;
+                            flippedCards = [];
+                            isLocked = false;
+                            renderCards();
+                        }, 800);
+                    }
+                } else {
+                    // Apenas uma carta virada, atualiza UI (tentativas não incrementa ainda)
+                    updateUI();
+                }
+            }
+
+            // ----- CONTROLE DO TEMPO -----
+            function startTimer() {
+                if (timerInterval) clearInterval(timerInterval);
+                seconds = 0;
+                timerSpan.textContent = '0';
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    timerSpan.textContent = seconds;
+                }, 1000);
+            }
+
+            // ----- REINICIAR JOGO -----
+            function resetGame() {
+                // Para o timer
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                // Reseta estado
+                cards = buildCardDeck();
+                flippedCards = [];
+                matchedPairs = 0;
+                attempts = 0;
+                isLocked = false;
+                gameFinished = false;
+                seconds = 0;
+
+                winDiv.style.display = 'none';
+                renderCards();
+                updateUI();
+                startTimer();
+            }
+
+            // ----- INICIALIZAÇÃO -----
+            function init() {
+                resetGame();
+                resetBtn.addEventListener('click', resetGame);
+            }
+
+            init();
+        })();
+    </script>
+
+</body>
+</html>
