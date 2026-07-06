@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matemática Survival</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; background: linear-gradient(135deg, #2b5876, #4e4376);
+        }
+        .game-container {
+            background: rgba(255,255,255,0.9); padding: 2rem; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; max-width: 500px; width: 90%;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .info { display: flex; justify-content: space-between; margin: 15px 0; font-size: 1.2rem; font-weight: bold; }
+        .info span { background: #222; color: white; padding: 5px 15px; border-radius: 30px; }
+        .question-box {
+            background: #f8f9fa; padding: 30px; border-radius: 15px; margin: 20px 0;
+            border: 2px dashed #4e4376;
+        }
+        .question-box h2 { font-size: 2.5rem; color: #2b5876; }
+        .options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .options button {
+            padding: 15px; font-size: 1.5rem; border: none; border-radius: 10px;
+            background: #4e4376; color: white; cursor: pointer; transition: 0.3s;
+        }
+        .options button:hover { transform: scale(1.05); background: #2b5876; }
+        .options button.correct { background: #28a745; }
+        .options button.wrong { background: #dc3545; }
+        #feedback { margin: 20px 0; font-size: 1.3rem; min-height: 2rem; }
+        .btn-reset {
+            padding: 12px 30px; background: #ffc107; border: none; border-radius: 30px;
+            font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px;
+        }
+        .btn-reset:hover { background: #e0a800; }
+        #gameOver { display: none; }
+        #gameOver h2 { color: #dc3545; }
+        @media (max-width: 500px) {
+            .options { grid-template-columns: 1fr 1fr; }
+            .question-box h2 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="app">
+        <h1>🧮 Matemática Survival</h1>
+        <div class="info">
+            <span>🏆 Pontos: <span id="scoreDisplay">0</span></span>
+            <span>⏱️ Tempo: <span id="timerDisplay">30</span>s</span>
+        </div>
+
+        <div id="gameArea">
+            <div class="question-box">
+                <h2 id="questionText">5 + 3 = ?</h2>
+            </div>
+            <div class="options" id="optionsContainer">
+                <button onclick="checkAnswer(0)">8</button>
+                <button onclick="checkAnswer(1)">7</button>
+                <button onclick="checkAnswer(2)">9</button>
+                <button onclick="checkAnswer(3)">6</button>
+            </div>
+            <div id="feedback"></div>
+        </div>
+
+        <div id="gameOver">
+            <h2>⏰ Fim de Jogo!</h2>
+            <p style="font-size:1.5rem;">Sua pontuação final: <strong id="finalScore">0</strong></p>
+        </div>
+
+        <button class="btn-reset" onclick="resetGame()">🔄 Jogar Novamente</button>
+    </div>
+
+    <script>
+        // --- Variáveis Globais ---
+        let currentScore = 0;
+        let timeLeft = 30;
+        let timerInterval = null;
+        let gameActive = true;
+        let correctAnswer = 0;
+
+        // --- Elementos DOM ---
+        const questionText = document.getElementById('questionText');
+        const optionsBtns = document.querySelectorAll('#optionsContainer button');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const feedback = document.getElementById('feedback');
+        const gameArea = document.getElementById('gameArea');
+        const gameOverDiv = document.getElementById('gameOver');
+        const finalScore = document.getElementById('finalScore');
+
+        // --- Gerar nova pergunta ---
+        function generateQuestion() {
+            if (!gameActive) return;
+            const a = Math.floor(Math.random() * 10) + 1;
+            const b = Math.floor(Math.random() * 10) + 1;
+            const operator = Math.random() > 0.5 ? '+' : '-';
+            let result;
+            if (operator === '+') {
+                result = a + b;
+            } else {
+                // Garantir que não fique negativo
+                if (a < b) return generateQuestion(); 
+                result = a - b;
+            }
+            questionText.textContent = `${a} ${operator} ${b} = ?`;
+            correctAnswer = result;
+
+            // Gerar 4 opções (uma certa, 3 erradas)
+            let options = new Set();
+            options.add(result);
+            while (options.size < 4) {
+                let offset = Math.floor(Math.random() * 7) - 3; // -3 a +3
+                let fake = result + offset;
+                if (fake !== result && fake >= 0) options.add(fake);
+            }
+            // Embaralhar
+            let shuffled = Array.from(options).sort(() => Math.random() - 0.5);
+            optionsBtns.forEach((btn, index) => {
+                btn.textContent = shuffled[index];
+                btn.className = ''; // resetar cor
+                btn.disabled = false;
+            });
+            feedback.textContent = '';
+        }
+
+        // --- Verificar resposta ---
+        function checkAnswer(index) {
+            if (!gameActive) return;
+            const selectedBtn = optionsBtns[index];
+            const selectedValue = parseInt(selectedBtn.textContent);
+            
+            if (selectedValue === correctAnswer) {
+                selectedBtn.classList.add('correct');
+                currentScore += 10;
+                scoreDisplay.textContent = currentScore;
+                feedback.textContent = '✅ Correto! +10 pontos';
+                feedback.style.color = '#28a745';
+            } else {
+                selectedBtn.classList.add('wrong');
+                // Mostrar qual era a certa
+                optionsBtns.forEach(btn => {
+                    if (parseInt(btn.textContent) === correctAnswer) {
+                        btn.classList.add('correct');
+                    }
+                });
+                feedback.textContent = '❌ Errado!';
+                feedback.style.color = '#dc3545';
+            }
+
+            // Desabilitar todos os botões e agendar próxima pergunta
+            optionsBtns.forEach(btn => btn.disabled = true);
+            setTimeout(() => {
+                if (gameActive) generateQuestion();
+            }, 800);
+        }
+
+        // --- Timer ---
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // --- Fim de Jogo ---
+        function endGame() {
+            gameActive = false;
+            gameArea.style.display = 'none';
+            gameOverDiv.style.display = 'block';
+            finalScore.textContent = currentScore;
+            optionsBtns.forEach(btn => btn.disabled = true);
+        }
+
+        // --- Resetar Jogo ---
+        function resetGame() {
+            clearInterval(timerInterval);
+            gameActive = true;
+            timeLeft = 30;
+            currentScore = 0;
+            timerDisplay.textContent = timeLeft;
+            scoreDisplay.textContent = '0';
+            gameArea.style.display = 'block';
+            gameOverDiv.style.display = 'none';
+            feedback.textContent = '';
+            optionsBtns.forEach(btn => btn.disabled = false);
+            generateQuestion();
+            startTimer();
+        }
+
+        // --- Iniciar ---
+        resetGame();
+    </script>
+</body>
+</html>
